@@ -1,20 +1,19 @@
 -- سكربت 3rfe GUI المعدل حسب طلبك
--- يشمل: keybinds قابلة للتغيير، Visual speed/infinite jump، إخفاء عالمي، تيليبورته للهايدر، وغيرها
+-- يشمل: speed قابل للتعديل، infinite jump بواجهة تشغيل/إيقاف، وإعدادات مخصصة
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
--- إعدادات أساسية
 local keybinds = {}
 local toggleGUIKey = Enum.KeyCode.RightShift
 local guiVisible = true
 local infiniteJumpEnabled = false
-local walkSpeed = 16
+local selectedSpeed = 16
+local speedEnabled = false
 
--- إنشاء GUI
+-- GUI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "ThreeRfeGUI"
 
@@ -24,19 +23,13 @@ MainFrame.Position = UDim2.new(0.25, 0, 0.2, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = true
-local corner = Instance.new("UICorner", MainFrame)
-corner.CornerRadius = UDim.new(0, 30)
 
--- Toggle GUI
-UIS.InputBegan:Connect(function(input, gpe)
-    if not gpe and input.KeyCode == toggleGUIKey then
-        guiVisible = not guiVisible
-        MainFrame.Visible = guiVisible
-    end
-end)
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 30)
+corner.Parent = MainFrame
 
 -- تبويبات
-local Tabs = { "Main", "Visual", "UI", "Keybinds", "Teleport" }
+local Tabs = { "Visual" }
 local TabContent = {}
 
 local TabFrame = Instance.new("Frame", MainFrame)
@@ -72,118 +65,65 @@ for i, tabName in ipairs(Tabs) do
     TabContent[tabName] = tabPanel
 end
 
--- إضافة زر
-local function addButton(parent, text, callback)
-    local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(0, 200, 0, 30)
-    btn.Position = UDim2.new(0, 10, 0, #parent:GetChildren() * 35)
-    btn.Text = text
-    btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 16
-    btn.MouseButton1Click:Connect(callback)
-end
+-- شريط اختيار السرعة
+local speedLabel = Instance.new("TextLabel", TabContent["Visual"])
+speedLabel.Size = UDim2.new(0, 200, 0, 30)
+speedLabel.Position = UDim2.new(0, 10, 0, 10)
+speedLabel.Text = "Speed: 16"
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- Main Tab
-addButton(TabContent["Main"], "Safe Zone", function()
-    LocalPlayer.Character:MoveTo(Vector3.new(0, 10, 0))
-end)
-
-addButton(TabContent["Main"], "Invisible Mode", function()
-    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.Transparency = 1
-            part.CanCollide = false
-        end
+local speedSlider = Instance.new("TextBox", TabContent["Visual"])
+speedSlider.Size = UDim2.new(0, 200, 0, 30)
+speedSlider.Position = UDim2.new(0, 10, 0, 50)
+speedSlider.Text = "16"
+speedSlider.ClearTextOnFocus = false
+speedSlider.FocusLost:Connect(function()
+    local val = tonumber(speedSlider.Text)
+    if val and val >= 1 and val <= 1000 then
+        selectedSpeed = val
+        speedLabel.Text = "Speed: " .. val
     end
 end)
 
-addButton(TabContent["Main"], "Complete Red/Green Light", function()
-    LocalPlayer.Character:MoveTo(Vector3.new(300, 10, 0)) -- غير دي حسب خط النهاية
+local toggleSpeedBtn = Instance.new("TextButton", TabContent["Visual"])
+toggleSpeedBtn.Size = UDim2.new(0, 200, 0, 30)
+toggleSpeedBtn.Position = UDim2.new(0, 10, 0, 90)
+toggleSpeedBtn.Text = "Toggle Speed"
+toggleSpeedBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+toggleSpeedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleSpeedBtn.MouseButton1Click:Connect(function()
+    speedEnabled = not speedEnabled
 end)
 
-addButton(TabContent["Main"], "Teleport to Hider", function()
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character:MoveTo(plr.Character.HumanoidRootPart.Position + Vector3.new(3, 0, 0))
-            break
-        end
-    end
-end)
-
--- Visual Tab
-addButton(TabContent["Visual"], "Set Speed to 1000", function()
-    if LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = 1000
-    end
-end)
-
-addButton(TabContent["Visual"], "Toggle Infinite Jump", function()
+-- Infinite Jump Toggle
+local infBtn = Instance.new("TextButton", TabContent["Visual"])
+infBtn.Size = UDim2.new(0, 200, 0, 30)
+infBtn.Position = UDim2.new(0, 10, 0, 130)
+infBtn.Text = "Toggle Infinite Jump"
+infBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+infBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+infBtn.MouseButton1Click:Connect(function()
     infiniteJumpEnabled = not infiniteJumpEnabled
 end)
 
--- Keybinds
-UIS.InputBegan:Connect(function(input, gpe)
-    if not gpe and keybinds[input.KeyCode] then
-        keybinds[input.KeyCode]()
-    end
-end)
-
--- مثال: ربط مفتاح
-addButton(TabContent["Keybinds"], "Set K for Safe Zone", function()
-    keybinds[Enum.KeyCode.K] = function()
-        LocalPlayer.Character:MoveTo(Vector3.new(0, 10, 0))
-    end
-end)
-
-addButton(TabContent["Keybinds"], "Set F for Toggle GUI", function()
-    toggleGUIKey = Enum.KeyCode.F
-end)
-
-addButton(TabContent["Keybinds"], "Bind J to Infinite Jump Toggle", function()
-    keybinds[Enum.KeyCode.J] = function()
-        infiniteJumpEnabled = not infiniteJumpEnabled
-    end
-end)
-
--- UI Tab
-addButton(TabContent["UI"], "Change GUI Keybind to T", function()
-    toggleGUIKey = Enum.KeyCode.T
-end)
-
--- Teleport Tab
-local playerList = Instance.new("ScrollingFrame", TabContent["Teleport"])
-playerList.Size = UDim2.new(0, 200, 0, 300)
-playerList.Position = UDim2.new(0, 10, 0, 10)
-playerList.CanvasSize = UDim2.new(0, 0, 5, 0)
-playerList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-playerList.BorderSizePixel = 0
-
-local function refreshPlayers()
-    playerList:ClearAllChildren()
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local btn = Instance.new("TextButton", playerList)
-            btn.Size = UDim2.new(1, -10, 0, 30)
-            btn.Position = UDim2.new(0, 5, 0, #playerList:GetChildren() * 32)
-            btn.Text = plr.Name
-            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            btn.MouseButton1Click:Connect(function()
-                LocalPlayer.Character:MoveTo(plr.Character.HumanoidRootPart.Position + Vector3.new(2, 0, 0))
-            end)
+-- تحديث السرعة باستمرار
+RunService.RenderStepped:Connect(function()
+    local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        if speedEnabled then
+            humanoid.WalkSpeed = selectedSpeed
+        else
+            humanoid.WalkSpeed = 16
         end
     end
-end
+end)
 
-refreshPlayers()
-
--- Infinite Jump
+-- قفزة لانهائية
 UIS.JumpRequest:Connect(function()
     if infiniteJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
-print("✅ 3rfe GUI Loaded with all requested features.")
+print("✅ Visual tab updated: speed + infinite jump configurable")
