@@ -1,5 +1,5 @@
--- سكربت 3rfe GUI المعدل حسب طلبك - شامل
--- يشمل: تبويبات متعددة، Visual (سرعة + قفز لانهائي)، CornerRadius، وسحب بالماوس
+-- سكربت 3rfe GUI المعدل - نسخة ثابتة
+-- تبويبات: Main, Visual, Teleport - بدون Invisible Mode أو Complete Red/Green Light
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -24,13 +24,13 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = true
 MainFrame.Active = true
-MainFrame.Draggable = true -- السحب بالماوس
+MainFrame.Draggable = true
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 30)
 corner.Parent = MainFrame
 
--- تبويبات
+-- Tabs
 local Tabs = { "Main", "Visual", "Teleport" }
 local TabContent = {}
 
@@ -82,24 +82,8 @@ end
 
 -- Main Tab
 addButton(TabContent["Main"], "Safe Zone", function()
-    LocalPlayer.Character:MoveTo(Vector3.new(25, 20, 25))
-end)
-
-addButton(TabContent["Main"], "Invisible Mode", function()
-    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.Transparency = 1
-            part.CanCollide = false
-        end
-    end
-    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.NameDisplayDistance = 0
-    end
-end)
-
-addButton(TabContent["Main"], "Complete Red/Green Light", function()
-    LocalPlayer.Character:MoveTo(Vector3.new(500, 20, 0))
+    -- مكان افتراضي آمن، عدله حسب الماب الحقيقي
+    LocalPlayer.Character:MoveTo(Vector3.new(100, 10, 100))
 end)
 
 -- Teleport to hider
@@ -166,4 +150,4 @@ UIS.JumpRequest:Connect(function()
     end
 end)
 
-print("✅ 3rfe GUI جاهز بالتبويبات، CornerRadius، وسحب بالماوس")
+print("✅ سكربت 3rfe GUI - نسخة ثابتة بدون مشاكل")
