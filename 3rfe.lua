@@ -1,5 +1,5 @@
--- سكربت 3rfe GUI المعدل حسب طلبك
--- يشمل: speed قابل للتعديل، infinite jump بواجهة تشغيل/إيقاف، وإعدادات مخصصة
+-- سكربت 3rfe GUI المعدل حسب طلبك - شامل
+-- يشمل: تبويبات متعددة، Visual (سرعة + قفز لانهائي)، CornerRadius، وسحب بالماوس
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -23,13 +23,15 @@ MainFrame.Position = UDim2.new(0.25, 0, 0.2, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = true
+MainFrame.Active = true
+MainFrame.Draggable = true -- السحب بالماوس
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 30)
 corner.Parent = MainFrame
 
 -- تبويبات
-local Tabs = { "Visual" }
+local Tabs = { "Main", "Visual", "Teleport" }
 local TabContent = {}
 
 local TabFrame = Instance.new("Frame", MainFrame)
@@ -65,7 +67,52 @@ for i, tabName in ipairs(Tabs) do
     TabContent[tabName] = tabPanel
 end
 
--- شريط اختيار السرعة
+-- زر مساعد
+local function addButton(parent, text, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0, 200, 0, 30)
+    btn.Position = UDim2.new(0, 10, 0, #parent:GetChildren() * 35)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 16
+    btn.MouseButton1Click:Connect(callback)
+end
+
+-- Main Tab
+addButton(TabContent["Main"], "Safe Zone", function()
+    LocalPlayer.Character:MoveTo(Vector3.new(25, 20, 25))
+end)
+
+addButton(TabContent["Main"], "Invisible Mode", function()
+    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 1
+            part.CanCollide = false
+        end
+    end
+    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.NameDisplayDistance = 0
+    end
+end)
+
+addButton(TabContent["Main"], "Complete Red/Green Light", function()
+    LocalPlayer.Character:MoveTo(Vector3.new(500, 20, 0))
+end)
+
+-- Teleport to hider
+addButton(TabContent["Main"], "Teleport to Hider", function()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character:MoveTo(plr.Character.HumanoidRootPart.Position + Vector3.new(3, 0, 0))
+            break
+        end
+    end
+end)
+
+-- Visual Tab
 local speedLabel = Instance.new("TextLabel", TabContent["Visual"])
 speedLabel.Size = UDim2.new(0, 200, 0, 30)
 speedLabel.Position = UDim2.new(0, 10, 0, 10)
@@ -96,7 +143,6 @@ toggleSpeedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
 end)
 
--- Infinite Jump Toggle
 local infBtn = Instance.new("TextButton", TabContent["Visual"])
 infBtn.Size = UDim2.new(0, 200, 0, 30)
 infBtn.Position = UDim2.new(0, 10, 0, 130)
@@ -107,23 +153,17 @@ infBtn.MouseButton1Click:Connect(function()
     infiniteJumpEnabled = not infiniteJumpEnabled
 end)
 
--- تحديث السرعة باستمرار
 RunService.RenderStepped:Connect(function()
     local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if humanoid then
-        if speedEnabled then
-            humanoid.WalkSpeed = selectedSpeed
-        else
-            humanoid.WalkSpeed = 16
-        end
+        humanoid.WalkSpeed = speedEnabled and selectedSpeed or 16
     end
 end)
 
--- قفزة لانهائية
 UIS.JumpRequest:Connect(function()
     if infiniteJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
-print("✅ Visual tab updated: speed + infinite jump configurable")
+print("✅ 3rfe GUI جاهز بالتبويبات، CornerRadius، وسحب بالماوس")
