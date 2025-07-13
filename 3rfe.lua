@@ -1,5 +1,5 @@
 -- =================================================================
--- FINAL VERSION - Kill Switch & Sticky Target
+-- FINAL VERSION - Shift-Click Teleport & Tutorial Fix
 -- =================================================================
 
 --// Services
@@ -28,7 +28,7 @@ local expandedSize = UDim2.new(0, 250, 0, 280)
 
 --// UI Creation
 local Gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-Gui.Name = "3rfeFinalUI_V2"
+Gui.Name = "3rfeFinalUI_V3"
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Gui.ResetOnSpawn = false
 
@@ -84,7 +84,7 @@ TutText.AnchorPoint = Vector2.new(0.5, 0.5)
 TutText.BackgroundTransparency = 1
 TutText.TextColor3 = Color3.new(1, 1, 1)
 TutText.Font = Enum.Font.SourceSans
-TutText.Text = "Left Click to Toggle | Right Click to Change Keybind"
+TutText.Text = "Left Click to Toggle | Right Click to Change Keybind | Shift Click To Toggle Teleport"
 TutText.TextSize = 16
 TutText.TextWrapped = true
 TutText.TextTransparency = 1
@@ -177,52 +177,85 @@ UIListLayout.SortOrder = Enum.SortOrder.Name
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 --// --- Functions ---
-function hideTutorial() if not tutorialActive then return end; tutorialActive = false; local i = TweenInfo.new(0.5); TweenService:Create(TutorialPopup, i, {BackgroundTransparency = 1}):Play(); TweenService:Create(TutStroke, i, {Transparency = 1}):Play(); local t = TweenService:Create(TutText, i, {TextTransparency = 1}); t:Play(); t.Completed:Wait(); TutorialContainer.Visible = false end
-function showTutorial() if not tutorialActive then return end; tutorialActive = true; TutorialContainer.Visible = true; local i = TweenInfo.new(0.5); TweenService:Create(TutorialPopup, i, {BackgroundTransparency = 0.2}):Play(); TweenService:Create(TutStroke, i, {Transparency = 0.5}):Play(); TweenService:Create(TutText, i, {TextTransparency = 0}):Play(); task.delay(7, hideTutorial) end
+-- FIXED Tutorial Functions
+function hideTutorial()
+	if not tutorialActive then return end
+	tutorialActive = false
+	local tweenInfo = TweenInfo.new(0.5)
+	TweenService:Create(TutorialPopup, tweenInfo, {BackgroundTransparency = 1}):Play()
+	TweenService:Create(TutStroke, tweenInfo, {Transparency = 1}):Play()
+	local textTween = TweenService:Create(TutText, tweenInfo, {TextTransparency = 1})
+	textTween:Play()
+	textTween.Completed:Wait()
+	TutorialContainer.Visible = false
+end
+
+function showTutorial()
+	if tutorialActive then return end
+	tutorialActive = true
+	TutorialContainer.Visible = true
+	local tweenInfo = TweenInfo.new(0.5)
+	TweenService:Create(TutorialPopup, tweenInfo, {BackgroundTransparency = 0.2}):Play()
+	TweenService:Create(TutStroke, tweenInfo, {Transparency = 0.5}):Play()
+	TweenService:Create(TutText, tweenInfo, {TextTransparency = 0}):Play()
+	task.delay(7, hideTutorial)
+end
+
 function removeHighlight() if HighlightedPlayer and HighlightedPlayer.Character then local old = HighlightedPlayer.Character:FindFirstChild("AimbotHighlight") if old then old:Destroy() end end; HighlightedPlayer = nil end
 function highlightTarget(player) if player == HighlightedPlayer then return end; removeHighlight(); local highlight = Instance.new("Highlight", player.Character); highlight.Name = "AimbotHighlight"; highlight.FillColor = Color3.fromRGB(255, 0, 0); highlight.OutlineColor = Color3.fromRGB(200, 0, 0); highlight.FillTransparency = 0.6; HighlightedPlayer = player end
 function getClosestTarget() local p, d = nil, math.huge; for _, v in ipairs(Players:GetPlayers()) do if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") and v.Character:FindFirstChildOfClass("Humanoid").Health > 0 then local s, o = Camera:WorldToViewportPoint(v.Character.Head.Position); if o then local t = (Vector2.new(s.X, s.Y) - UserInputService:GetMouseLocation()).Magnitude; if t < d then d = t; p = v end end end end return p end
-
--- MODIFIED toggleAimbot function
-function toggleAimbot()
-	AimbotEnabled = not AimbotEnabled
-	if AimbotEnabled then
-		ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 80)
-		Target = getClosestTarget() -- Find target only when enabling
-	else
-		ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		removeHighlight()
-		Target = nil
-	end
-end
-
+function toggleAimbot() AimbotEnabled = not AimbotEnabled; if AimbotEnabled then ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 80) Target = getClosestTarget() else ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) removeHighlight() Target = nil end end
 function collapseDropdown() isDropdownOpen = false; DropdownList.Visible = false; Frame:TweenSize(collapsedSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true); TeleportBtn.Text = "Select Player..." end
 function expandDropdown() isDropdownOpen = true; updatePlayerList(); Frame:TweenSize(expandedSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true); DropdownList.Visible = true; TeleportBtn.Text = "▲ Close Menu" end
-function updatePlayerList() for _, c in ipairs(DropdownList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end; local n = 0; for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer then n = n + 1; local b = Instance.new("TextButton", DropdownList); b.Name = p.Name; b.Size = UDim2.new(1, -10, 0, 30); b.BackgroundColor3 = Color3.fromRGB(60, 60, 70); b.TextColor3 = Color3.new(1, 1, 1); b.Text = "  " .. p.DisplayName; b.Font = Enum.Font.SourceSans; b.TextXAlignment = Enum.TextXAlignment.Left; b.TextScaled = true; local bc = Instance.new("UICorner", b); bc.CornerRadius = UDim.new(0, 6); b.MouseButton1Click:Connect(function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0); collapseDropdown() end end) end end; DropdownList.CanvasSize = UDim2.new(0, 0, 0, (30 + UIListLayout.Padding.Offset) * n + 5) end
+
+-- MODIFIED updatePlayerList to support Shift-Click
+function updatePlayerList()
+	for _, child in ipairs(DropdownList:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+	local playerCount = 0
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			playerCount = playerCount + 1
+			local playerBtn = Instance.new("TextButton", DropdownList)
+			playerBtn.Name = player.Name
+			playerBtn.Size = UDim2.new(1, -10, 0, 30)
+			playerBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+			playerBtn.TextColor3 = Color3.new(1, 1, 1)
+			playerBtn.Text = "  " .. player.DisplayName
+			playerBtn.Font = Enum.Font.SourceSans
+			playerBtn.TextXAlignment = Enum.TextXAlignment.Left
+			playerBtn.TextScaled = true
+			local plrBtnCorner = Instance.new("UICorner", playerBtn)
+			plrBtnCorner.CornerRadius = UDim.new(0, 6)
+			
+			playerBtn.MouseButton1Click:Connect(function()
+				if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+					LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+					
+					-- Check if Shift key is held down
+					local shiftHeld = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+					if not shiftHeld then
+						collapseDropdown()
+					end
+				end
+			end)
+		end
+	end
+	DropdownList.CanvasSize = UDim2.new(0, 0, 0, (30 + UIListLayout.Padding.Offset) * playerCount + 5)
+end
 
 --// --- Input Handling ---
 TutorialButton.MouseButton1Click:Connect(showTutorial)
 TeleportBtn.MouseButton1Click:Connect(function() if isDropdownOpen then collapseDropdown() else expandDropdown() end end)
-
--- KILL SWITCH: When X is clicked, disable the script and destroy the UI
-CloseButton.MouseButton1Click:Connect(function()
-	scriptActive = false
-	removeHighlight()
-	Gui:Destroy()
-end)
-
--- Aimbot Button: Left click to toggle, Right click to change keybind
+CloseButton.MouseButton1Click:Connect(function() scriptActive = false; removeHighlight(); Gui:Destroy() end)
 ToggleBtn.MouseButton1Click:Connect(toggleAimbot)
-ToggleBtn.MouseButton2Click:Connect(function()
-	if isDropdownOpen then collapseDropdown() end
-	SelectingKey = true
-	ToggleBtn.Text = "Press any key..."
-end)
+ToggleBtn.MouseButton2Click:Connect(function() if isDropdownOpen then collapseDropdown() end; SelectingKey = true; ToggleBtn.Text = "Press any key..." end)
 
--- General Keyboard Input
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-	if not scriptActive or gameProcessedEvent then return end -- Check if script is active
-
+	if not scriptActive or gameProcessedEvent then return end
 	if SelectingKey and input.UserInputType == Enum.UserInputType.Keyboard then
 		CurrentKey = input.KeyCode
 		SelectingKey = false
@@ -238,18 +271,13 @@ Frame:TweenSize(collapsedSize, Enum.EasingDirection.Out, Enum.EasingStyle.Back, 
 TweenService:Create(Frame, TweenInfo.new(0.4), { BackgroundTransparency = 0.6 }):Play()
 
 RunService.RenderStepped:Connect(function()
-	if not scriptActive then return end -- Check if script is active
-
+	if not scriptActive then return end
 	UIGradient.Rotation = 45 + math.sin(tick() * 0.5) * 10
-	
-	-- MODIFIED Aimbot Logic for sticky target
 	if AimbotEnabled and Target then
 		if Target.Character and Target.Character:FindFirstChild("Head") and Target.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-			-- Target is valid, aim and highlight
 			highlightTarget(Target)
 			Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.Character.Head.Position)
 		else
-			-- Target is no longer valid, stop aiming and clear target
 			removeHighlight()
 			Target = nil
 		end
