@@ -96,7 +96,7 @@ else
 end
 
 local Window = Library:CreateWindow({
-	Title = "3rfe - Voidware",
+	Title = "3rfe - Ink Game",
     Footer = "discord.gg/voidware",
 	Center = true,
 	AutoShow = true,
