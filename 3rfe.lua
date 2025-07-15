@@ -623,7 +623,7 @@ Script.Functions.OnLoad = function()
         end
     }
 
-    Script.Functions.EffectsNotification("Voidware - 3rfe Script loaded!", 5)
+    Script.Functions.EffectsNotification("3rfe Script loaded!", 5)
     Script.Functions.EffectsNotification("Join discord.gg/voidware for updates :)", 5)
 end
 
