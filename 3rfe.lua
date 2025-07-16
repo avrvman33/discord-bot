@@ -106,6 +106,41 @@ local Window = Library:CreateWindow({
 	MenuFadeTime = 0
 })
 
+task.spawn(function()
+    task.wait(1) 
+
+    local parentFrame = Window.Container or Window.Main 
+    
+    if parentFrame then
+        pcall(function()
+            local CloseButton = Instance.new("TextButton")
+            local corner = Instance.new("UICorner")
+
+            CloseButton.Name = "CloseButton"
+            CloseButton.Text = "X"
+            CloseButton.TextColor3 = Color3.new(1, 1, 1)
+            CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            CloseButton.BorderSizePixel = 0
+            CloseButton.Size = UDim2.new(0, 22, 0, 22)
+            CloseButton.Font = Enum.Font.SourceSansBold
+            CloseButton.TextSize = 16
+            CloseButton.Parent = parentFrame
+            CloseButton.AnchorPoint = Vector2.new(1, 0)
+            CloseButton.Position = UDim2.new(1, -5, 0, 5)
+            CloseButton.ZIndex = 999 --
+
+            corner.CornerRadius = UDim.new(0, 4)
+            corner.Parent = CloseButton
+
+            CloseButton.MouseButton1Click:Connect(function()
+                Library:Unload()
+            end)
+        end)
+    else
+        warn("Voidware Script: Could not find parent frame for Close Button.")
+    end
+end)
+
 
 local Tabs = {
     Main = Window:AddTab("Main", "gamepad-2"),
@@ -113,7 +148,14 @@ local Tabs = {
     Misc = Window:AddTab("Misc", "wrench"),
     Visuals = Window:AddTab("Visuals", "eye"),
     ["UI Settings"] = Window:AddTab("UI Settings", "sliders-horizontal"),
+    ["<font color='#ff0000'>KILL GUI</font>"] = Window:AddTab("KILL GUI", "power"),
 }
+
+local KillGuiGroup = Tabs["<font color='#ff0000'>KILL GUI</font>"]:AddLeftGroupbox("Confirm Action")
+KillGuiGroup:AddButton("Yes, Kill the GUI", function()
+    Library:Unload()
+end)
+
 
 local Maid = {}
 Maid.__index = Maid
@@ -1138,7 +1180,7 @@ function Script.Functions.TeleportSafe()
     end)
     local call = Toggles.AntiFlingToggle.Value
     Script.Functions.DisableAntiFling()
-    lplr.Character:PivotTo(CFrame.new(Vector3.new(146, 54, 29)))
+    lplr.Character:PivotTo(CFrame.new(Vector3.new(292, 54, -219)))
     if call then
         task.delay(0.5, Script.Functions.EnableAntiFling)
     end
@@ -2948,16 +2990,7 @@ local MiscGroup = Tabs.Misc:AddLeftGroupbox("Misc", "wrench") do
             end
         end
     end)
-    MiscGroup:AddButton("Reset Camera \n [Might Break your camera!]", Script.Functions.FixCamera)
-    MiscGroup:AddButton("Skip Cutscene", function()
-        -- Script.Functions.FixCamera
-        if camera then
-            camera.CameraType = Enum.CameraType.Custom
-             if lplr.Character and lplr.Character:FindFirstChild("Humanoid") then
-                camera.CameraSubject = lplr.Character:FindFirstChild("Humanoid")
-            end
-        end
-    end)
+
     MiscGroup:AddDivider()
 
     function Script.Functions.ToggleTPTSP()
@@ -3551,6 +3584,12 @@ function Script.Functions.FlingCharacterHook(call)
 end
 
 local SecurityGroupBox = Tabs.Main:AddRightGroupbox("Security", "shield") do
+
+    SecurityGroupBox:AddToggle("AutoSkipCutscene", {
+        Text = "Auto Skip Cutscenes",
+        Default = true
+    })
+
     SecurityGroupBox:AddToggle("PatchFlingAnticheat", {
         Text = "Patch Anticheat",
         Default = false
@@ -4390,6 +4429,35 @@ end))
 
 task.spawn(function() pcall(Script.Functions.OnLoad) end)
 
+if Toggles.AutoSkipCutscene then
+    Toggles.AutoSkipCutscene:OnChanged(function(enabled)
+        if enabled then
+            Script.Functions.Alert("Auto Skip Cutscenes Enabled", 3)
+            Script.Temp.SkipCutsceneLoop = task.spawn(function()
+                while Toggles.AutoSkipCutscene.Value and not Library.Unloaded do
+                    
+                    pcall(Script.Functions.SkipDialogue)
+
+                    if workspace.CurrentCamera and workspace.CurrentCamera.CameraType == Enum.CameraType.Scriptable then
+                        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+                        if lplr.Character and lplr.Character:FindFirstChild("Humanoid") then
+                            workspace.CurrentCamera.CameraSubject = lplr.Character.Humanoid
+                        end
+                    end
+                    task.wait(0.2)
+                end
+            end)
+        else
+            Script.Functions.Alert("Auto Skip Cutscenes Disabled", 3)
+            if Script.Temp.SkipCutsceneLoop then
+                task.cancel(Script.Temp.SkipCutsceneLoop)
+                Script.Temp.SkipCutsceneLoop = nil
+            end
+        end
+    end)
+end
+
+
 Library:OnUnload(function()
     pcall(function()
         Script.Maid:Clean()
@@ -4421,6 +4489,7 @@ MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "M", NoU
 -- ================== END OF MODIFICATION ==================
 MenuGroup:AddButton("Join Discord Server", Script.Functions.JoinDiscordServer)
 MenuGroup:AddButton("Unload", function() Library:Unload() end)
+
 
 CreditsGroup:AddLabel("erchodev#0 - script dev")
 CreditsGroup:AddLabel("Jorsan - Mingle Support & Godmode")
