@@ -1528,13 +1528,149 @@ local FunGroupBox = Tabs.Main:AddLeftGroupbox("Fun", "zap") do
     FunGroupBox:AddToggle("FlingAuraToggle", {
         Text = "Fling Aura",
         Default = false
-    })
+        }):AddKeyPicker("HighlightKey", {
+        Default = "Y",
+        Mode = "Toggle",
+        Text = "Fling Key",
+        NoUI = false,
+        SyncToggleState = true,
+        })
     
     FunGroupBox:AddToggle("AntiFlingToggle", {
         Text = "Anti Fling",
         Default = false
     })
-    
+
+    FunGroupBox:AddToggle("PlayerHighlighting", {
+        Text = "Highlight",
+        Default = false,
+        Tooltip = "Right Click On Any Player To Mark Him"
+    }):AddKeyPicker("HighlightKey", {
+        Default = "I",
+        Mode = "Toggle",
+        Text = "Highlight Key",
+        NoUI = false,
+        SyncToggleState = true,
+    })
+
+
+
+    local HighlightedPlayers = {}
+    local UserInputService = game:GetService("UserInputService")
+    local Mouse = game:GetService("Players").LocalPlayer:GetMouse()
+
+    local function toggleHighlight(player)
+    if HighlightedPlayers[player] then
+        -- إزالة الهايلايت إذا كان اللاعب محددًا بالفعل
+        if HighlightedPlayers[player]:FindFirstChild("MarkedHighlight") then
+            HighlightedPlayers[player].MarkedHighlight:Destroy()
+        end
+        HighlightedPlayers[player] = nil
+        Script.Functions.Alert("Player Unmarked", 2)
+    else
+        -- إضافة هايلايت إذا لم يكن اللاعب محددًا
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hl = Instance.new("Highlight")
+            hl.Name = "MarkedHighlight"
+            hl.FillColor = Color3.fromRGB(0, 255, 0)
+            hl.OutlineColor = Color3.fromRGB(0, 200, 0)
+            hl.FillTransparency = 0.4
+            hl.OutlineTransparency = 0
+            hl.Adornee = player.Character
+            hl.Parent = player.Character
+            HighlightedPlayers[player] = player.Character
+            Script.Functions.Alert("Player Marked: " .. player.Name, 2)
+        end
+    end
+end
+
+Mouse.Button2Down:Connect(function()
+    if not Toggles.PlayerHighlighting.Value then return end
+
+    local target = Mouse.Target
+    if not target then return end
+
+    local model = target:FindFirstAncestorOfClass("Model")
+    if not model then return end
+
+    local plr = game:GetService("Players"):GetPlayerFromCharacter(model)
+    if plr and plr ~= game:GetService("Players").LocalPlayer then
+        toggleHighlight(plr)
+    end
+end)
+
+Options.HighlightKey:OnClick(function()
+    Toggles.PlayerHighlighting:SetValue(not Toggles.PlayerHighlighting.Value)
+end)
+
+
+Toggles.PlayerHighlighting:OnChanged(function(enabled)
+    if enabled then
+        Script.Functions.Alert("Highlight Enabled", 3)
+    else
+        Script.Functions.Alert("Highlight Disabled", 3)
+        
+        for player, char in pairs(HighlightedPlayers) do
+            if char and char:FindFirstChild("MarkedHighlight") then
+                char.MarkedHighlight:Destroy()
+            end
+        end
+        HighlightedPlayers = {} 
+    end
+end)
+
+    Mouse.Button2Down:Connect(function()
+        if not Toggles.PlayerHighlighting.Value then return end
+
+        local target = Mouse.Target
+        if not target then return end
+
+        local model = target:FindFirstAncestorOfClass("Model")
+        if not model then return end
+
+        local plr = game:GetService("Players"):GetPlayerFromCharacter(model)
+        if plr and plr ~= game:GetService("Players").LocalPlayer then
+            toggleHighlight(plr)
+        end
+    end)
+
+
+Toggles.PlayerHighlighting:OnChanged(function(enabled)
+    if enabled then
+        Script.Functions.Alert("Highlight Enabled", 3)
+    else
+        Script.Functions.Alert("Highlight Disabled", 3)
+        
+        for player, char in pairs(HighlightedPlayers) do
+            if char and char:FindFirstChild("MarkedHighlight") then
+                char.MarkedHighlight:Destroy()
+            end
+        end
+        HighlightedPlayers = {} 
+    end
+end)
+
+    Mouse.Button2Down:Connect(function()
+        if not Toggles.PlayerHighlighting.Value then return end
+
+        local target = Mouse.Target
+        if not target then return end
+
+        local model = target:FindFirstAncestorOfClass("Model")
+        if not model then return end
+
+        local plr = game:GetService("Players"):GetPlayerFromCharacter(model)
+        if plr and plr ~= game:GetService("Players").LocalPlayer then
+            toggleHighlight(plr)
+        end
+    end)
+
+    Options.HighlightKey:OnClick(function()
+        Toggles.PlayerHighlighting:SetValue(not Toggles.PlayerHighlighting.Value)
+    end)
+
+
+
     Toggles.AntiFlingToggle:OnChanged(function(call)
         if call then
             if not hookmetamethod then
@@ -3147,9 +3283,9 @@ end)
 local PlayerGroupBox = Tabs.Main:AddRightGroupbox("Player", "user") do
     PlayerGroupBox:AddSlider("SpeedSlider", {
         Text = "Walk Speed",
-        Default = 100,
+        Default = 200,
         Min = 0,
-        Max = 1000,
+        Max = 1500,
         Rounding = 1
     })
     
