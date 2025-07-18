@@ -96,7 +96,7 @@ else
 end
 
 local Window = Library:CreateWindow({
-	Title = "Voidware - 3rfe",
+	Title = "Voidware",
     Footer = ".gg/voidware",
 	Center = true,
 	AutoShow = true,
